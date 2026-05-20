@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5b1f8f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Açaí Control</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%87%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f0716;
+    --card:#1c1028;
+    --card-2:#26173a;
+    --primary:#8b3fd1;
+    --primary-2:#a855f7;
+    --accent:#f59e0b;
+    --good:#22c55e;
+    --bad:#ef4444;
+    --text:#f5f3ff;
+    --muted:#a39bb5;
+    --border:#2d1f44;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;overscroll-behavior:none}
+  body{min-height:100vh;padding-bottom:90px}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:16px}
+
+  /* Login */
+  .login-screen{position:fixed;inset:0;background:linear-gradient(160deg,#1a0a2e,#0f0716);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:24px}
+  .logo{font-size:64px;margin-bottom:12px}
+  .login-screen h1{margin:0 0 4px;font-size:28px;background:linear-gradient(90deg,#a855f7,#f59e0b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .login-screen p{color:var(--muted);margin:0 0 32px}
+  .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px}
+  .user-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .user-pick button{background:var(--card-2);border:2px solid var(--border);padding:14px;border-radius:12px;font-size:15px;font-weight:600}
+  .user-pick button.active{border-color:var(--primary-2);background:rgba(168,85,247,.15)}
+  .pin-input{width:100%;background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:14px;border-radius:12px;text-align:center;font-size:22px;letter-spacing:8px;margin-bottom:12px}
+  .login-btn{width:100%;background:linear-gradient(90deg,#8b3fd1,#a855f7);padding:14px;border-radius:12px;font-weight:700;font-size:16px}
+  .login-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+
+  /* Header */
+  header{background:linear-gradient(135deg,#5b1f8f,#3d1264);padding:18px 18px 14px;position:sticky;top:0;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .header-row{display:flex;justify-content:space-between;align-items:center}
+  .header-title{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .header-user{font-size:13px;color:#e9d5ff;background:rgba(255,255,255,.1);padding:6px 12px;border-radius:20px}
+  .header-user button{margin-left:8px;color:#e9d5ff;opacity:.7}
+
+  /* Main content */
+  main{padding:16px;max-width:600px;margin:0 auto}
+  .page{display:none}
+  .page.active{display:block}
+
+  /* KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px}
+  .kpi.full{grid-column:span 2}
+  .kpi-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .kpi-value{font-size:22px;font-weight:700}
+  .kpi-value.good{color:var(--good)}
+  .kpi-value.bad{color:var(--bad)}
+  .kpi-value.warn{color:var(--accent)}
+  .kpi-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+  /* Section card */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px}
+  .card h2{margin:0 0 12px;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+  .card h2 .small{font-size:12px;color:var(--muted);font-weight:400}
+
+  /* Forms */
+  .form-row{margin-bottom:12px}
+  .form-row label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .form-row input,.form-row select,.form-row textarea{width:100%;background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:10px;outline:none}
+  .form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--primary-2)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn-primary{width:100%;background:linear-gradient(90deg,#8b3fd1,#a855f7);padding:14px;border-radius:12px;font-weight:700;font-size:16px;color:#fff}
+  .btn-secondary{background:var(--card-2);border:1px solid var(--border);padding:10px 14px;border-radius:10px;font-size:14px;color:var(--text)}
+  .btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);padding:8px 12px;border-radius:8px;font-size:13px;color:#fca5a5}
+
+  /* Product buttons quick sale */
+  .product-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .product-btn{background:linear-gradient(135deg,var(--card-2),#311a48);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:left;position:relative;transition:transform .1s}
+  .product-btn:active{transform:scale(.97)}
+  .product-btn .pname{font-weight:600;font-size:15px;margin-bottom:4px}
+  .product-btn .pprice{color:var(--accent);font-size:14px;font-weight:600}
+  .product-btn .pdel{position:absolute;top:6px;right:6px;font-size:11px;color:#fca5a5;opacity:.6;padding:4px}
+
+  /* List */
+  .list{list-style:none;padding:0;margin:0}
+  .list li{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .list li:last-child{border-bottom:none}
+  .list .l-main{flex:1;min-width:0}
+  .list .l-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list .l-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .list .l-amount{font-weight:700;font-size:15px;margin-left:10px;white-space:nowrap}
+  .list .l-amount.in{color:var(--good)}
+  .list .l-amount.out{color:#fca5a5}
+  .list .l-del{margin-left:8px;color:#fca5a5;opacity:.5;padding:6px;font-size:14px}
+  .empty{color:var(--muted);text-align:center;padding:20px;font-size:14px}
+
+  /* Tabs in sales */
+  .tabs{display:flex;background:var(--card-2);border-radius:10px;padding:4px;margin-bottom:14px}
+  .tabs button{flex:1;padding:9px 3px;border-radius:8px;font-size:12px;color:var(--muted);white-space:nowrap}
+  .tabs button.active{background:var(--primary);color:#fff;font-weight:600}
+
+  /* Bottom nav */
+  nav.bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(28,16,40,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100}
+  nav.bottom button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;color:var(--muted);font-size:11px}
+  nav.bottom button.active{color:var(--primary-2)}
+  nav.bottom button .icon{font-size:22px}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);border-radius:18px;padding:20px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}
+  .modal h3{margin:0 0 14px;font-size:18px}
+
+  /* Toast */
+  .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--good);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .toast.show{opacity:1}
+  .toast.bad{background:var(--bad)}
+
+  /* Chart container */
+  .chart-wrap{position:relative;height:180px}
+
+  /* Date filter */
+  .date-filter{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .date-filter select,.date-filter input{flex:1;min-width:120px;background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px}
+
+  .badge{display:inline-block;padding:2px 8px;background:rgba(168,85,247,.2);color:#d8b4fe;border-radius:10px;font-size:11px;margin-left:6px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="logo">🍇</div>
+  <h1>Açaí Control</h1>
+  <p>Tu negocio en el bolsillo</p>
+  <div class="login-card">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">¿Quién eres?</div>
+    <div class="user-pick" id="userPick">
+      <button data-user="Mauro" class="active">Mauro</button>
+      <button data-user="Hugo">Hugo</button>
+    </div>
+    <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="PIN">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-hint">PIN por defecto: <b>1234</b> (puedes cambiarlo en Ajustes)</div>
+  </div>
+</div>
+
+<!-- APP -->
+<header>
+  <div class="header-row">
+    <div class="header-title"><span id="pageTitle">Resumen</span></div>
+    <div class="header-user"><span id="currentUser">—</span><button onclick="logout()" title="Salir">⏻</button></div>
+  </div>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section class="page active" id="page-dashboard">
+    <div class="date-filter">
+      <select id="dashPeriod" onchange="renderDashboard()">
+        <option value="today">Hoy</option>
+        <option value="week">Esta semana</option>
+        <option value="month" selected>Este mes</option>
+        <option value="prev_month">Mes anterior</option>
+        <option value="year">Este año</option>
+        <option value="all">Todo</option>
+      </select>
+    </div>
+
+    <div id="remindersBanner"></div>
+
+    <div class="kpi-grid">
+      <div class="kpi full">
+        <div class="kpi-label">Ganancia neta</div>
+        <div class="kpi-value" id="kpiGain">$0</div>
+        <div class="kpi-sub" id="kpiGainSub">Ventas − Compras − Gastos − Sueldos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ventas</div>
+        <div class="kpi-value good" id="kpiSales">$0</div>
+        <div class="kpi-sub" id="kpiSalesCount">0 ventas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Compras</div>
+        <div class="kpi-value bad" id="kpiPurchases">$0</div>
+        <div class="kpi-sub" id="kpiPurchasesCount">0 movimientos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Gastos</div>
+        <div class="kpi-value bad" id="kpiExpenses">$0</div>
+        <div class="kpi-sub" id="kpiExpensesCount">0 movimientos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sueldos</div>
+        <div class="kpi-value bad" id="kpiSalaries">$0</div>
+        <div class="kpi-sub" id="kpiSalariesCount">0 pagos</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💰 IVA del período <span class="small" id="ivaPeriodLabel"></span></h2>
+      <div class="kpi-grid" style="margin-bottom:0">
+        <div class="kpi">
+          <div class="kpi-label">IVA Débito (ventas)</div>
+          <div class="kpi-value good" id="kpiIvaSales">$0</div>
+          <div class="kpi-sub">IVA que cobraste</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">IVA Crédito (compras)</div>
+          <div class="kpi-value" id="kpiIvaPurchases" style="color:#a39bb5">$0</div>
+          <div class="kpi-sub">IVA que pagaste</div>
+        </div>
+        <div class="kpi full">
+          <div class="kpi-label">IVA a pagar al SII</div>
+          <div class="kpi-value warn" id="kpiIvaDue">$0</div>
+          <div class="kpi-sub" id="kpiIvaDueSub">Débito − Crédito</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ventas por día <span class="small" id="chartLabel"></span></h2>
+      <div class="chart-wrap"><canvas id="chartSales"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Ventas por canal</h2>
+      <ul class="list" id="topChannelsList"><li class="empty">Sin datos aún</li></ul>
+    </div>
+
+    <div class="card">
+      <h2>Movimientos recientes</h2>
+      <ul class="list" id="recentList"><li class="empty">Aún no hay movimientos</li></ul>
+    </div>
+  </section>
+
+  <!-- VENTAS -->
+  <section class="page" id="page-sales">
+    <div class="card">
+      <h2>Registrar venta</h2>
+      <div class="form-row"><label>Fecha</label><input id="sDateInput" type="date"></div>
+      <div class="form-row">
+        <label>Canal <button class="btn-secondary" style="float:right;padding:4px 10px;font-size:11px" onclick="openChannelManager()">Editar canales</button></label>
+        <select id="sChannelInput"></select>
+      </div>
+      <div class="form-row"><label>Monto vendido</label><input id="sAmountInput" inputmode="numeric" placeholder="0"></div>
+      <div class="form-row"><label>Notas (opcional)</label><input id="sNotesInput" placeholder="Ej: día lluvioso, evento, etc."></div>
+      <button class="btn-primary" onclick="addSale()">Guardar venta</button>
+    </div>
+
+    <div class="card">
+      <h2>Ventas de hoy <span class="small" id="todaySalesTotal">$0</span></h2>
+      <ul class="list" id="todaySalesList"><li class="empty">Aún no hay ventas hoy</li></ul>
+    </div>
+
+    <div class="card">
+      <h2>Historial por día</h2>
+      <div class="date-filter">
+        <input type="date" id="salesFilterFrom" onchange="renderSalesHistory()">
+        <input type="date" id="salesFilterTo" onchange="renderSalesHistory()">
+      </div>
+      <ul class="list" id="salesHistoryList"></ul>
+    </div>
+  </section>
+
+  <!-- COMPRAS / GASTOS / SUELDOS -->
+  <section class="page" id="page-expenses">
+    <div class="tabs">
+      <button class="active" data-exp-tab="purchases" onclick="switchExpTab('purchases')">🛒 Compras</button>
+      <button data-exp-tab="expenses" onclick="switchExpTab('expenses')">💡 Gastos</button>
+      <button data-exp-tab="salaries" onclick="switchExpTab('salaries')">💵 Sueldos</button>
+      <button data-exp-tab="reminders" onclick="switchExpTab('reminders')">🔔 Pagos</button>
+    </div>
+
+    <div id="tab-purchases">
+      <div class="card">
+        <h2>Nueva compra de insumos</h2>
+        <div class="form-row"><label>Descripción</label><input id="pDesc" placeholder="Ej: Açaí 5kg, vasos, frutas..."></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Monto</label><input id="pAmount" inputmode="numeric" placeholder="0"></div>
+          <div class="form-row"><label>Fecha</label><input id="pDate" type="date"></div>
+        </div>
+        <div class="form-row"><label>Proveedor (opcional)</label><input id="pSupplier" placeholder="Ej: Mercado Central"></div>
+        <div class="form-row" style="display:flex;align-items:center;gap:10px;background:var(--card-2);padding:12px;border-radius:10px">
+          <input type="checkbox" id="pHasIva" checked style="width:20px;height:20px;accent-color:#a855f7">
+          <label for="pHasIva" style="margin:0;color:var(--text);font-size:14px;cursor:pointer">Factura con IVA (boleta = NO)</label>
+        </div>
+        <button class="btn-primary" onclick="addPurchase()">Guardar compra</button>
+      </div>
+      <div class="card">
+        <h2>Compras del mes <span class="small" id="purchaseMonthTotal">$0</span></h2>
+        <ul class="list" id="purchasesList"></ul>
+      </div>
+    </div>
+
+    <div id="tab-expenses" style="display:none">
+      <div class="card">
+        <h2>Nuevo gasto</h2>
+        <div class="form-grid">
+          <div class="form-row"><label>Categoría</label>
+            <select id="eCategory">
+              <option>Arriendo</option><option>Luz</option><option>Agua</option>
+              <option>Internet</option><option>Gas</option><option>Transporte</option>
+              <option>Marketing</option><option>Impuestos</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Monto</label><input id="eAmount" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="form-row"><label>Descripción (opcional)</label><input id="eDesc" placeholder="Detalle"></div>
+        <div class="form-row"><label>Fecha</label><input id="eDate" type="date"></div>
+        <div class="form-row" style="display:flex;align-items:center;gap:10px;background:var(--card-2);padding:12px;border-radius:10px">
+          <input type="checkbox" id="eHasIva" style="width:20px;height:20px;accent-color:#a855f7">
+          <label for="eHasIva" style="margin:0;color:var(--text);font-size:14px;cursor:pointer">Tiene factura con IVA (luz, internet, etc. normalmente SÍ)</label>
+        </div>
+        <button class="btn-primary" onclick="addExpense()">Guardar gasto</button>
+      </div>
+      <div class="card">
+        <h2>Gastos del mes <span class="small" id="expenseMonthTotal">$0</span></h2>
+        <ul class="list" id="expensesList"></ul>
+      </div>
+    </div>
+
+    <div id="tab-salaries" style="display:none">
+      <div class="card">
+        <h2>Pago de sueldo</h2>
+        <div class="form-row"><label>Persona</label><input id="sPerson" placeholder="Ej: Mauro, Hugo..."></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Monto</label><input id="sAmount" inputmode="numeric" placeholder="0"></div>
+          <div class="form-row"><label>Fecha</label><input id="sDate" type="date"></div>
+        </div>
+        <div class="form-row"><label>Mes correspondiente</label><input id="sMonth" type="month"></div>
+        <button class="btn-primary" onclick="addSalary()">Guardar sueldo</button>
+      </div>
+      <div class="card">
+        <h2>Sueldos del mes <span class="small" id="salaryMonthTotal">$0</span></h2>
+        <ul class="list" id="salariesList"></ul>
+      </div>
+    </div>
+
+    <div id="tab-reminders" style="display:none">
+      <div class="card">
+        <h2>Nuevo recordatorio de pago</h2>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Define un pago que se repite cada mes. La app te avisará cuando se acerque la fecha.</p>
+        <div class="form-row"><label>Nombre</label><input id="rName" placeholder="Ej: Arriendo, Internet, Proveedor..."></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Tipo</label>
+            <select id="rKind" onchange="onReminderKindChange()">
+              <option value="gasto">Gasto / Cuenta</option>
+              <option value="sueldo">Sueldo</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Día de pago (1-31)</label><input id="rDay" inputmode="numeric" placeholder="5"></div>
+        </div>
+        <div class="form-row" id="rCategoryRow"><label>Categoría</label>
+          <select id="rCategory">
+            <option>Arriendo</option><option>Luz</option><option>Agua</option>
+            <option>Internet</option><option>Gas</option><option>Marketing</option>
+            <option>Impuestos</option><option>Patente</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-row" id="rPersonRow" style="display:none"><label>Persona</label><input id="rPerson" placeholder="Ej: Mauro, Hugo"></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Monto estimado</label><input id="rAmount" inputmode="numeric" placeholder="opcional"></div>
+          <div class="form-row"><label>Avisar días antes</label><input id="rNotifyDays" inputmode="numeric" placeholder="3"></div>
+        </div>
+        <button class="btn-primary" onclick="addReminder()">Guardar recordatorio</button>
+      </div>
+
+      <div class="card">
+        <h2>Mis recordatorios</h2>
+        <ul class="list" id="remindersList"></ul>
+      </div>
+
+      <div class="card">
+        <h2>🔔 Notificaciones del celular</h2>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Recibe un aviso del sistema cuando se acerque una fecha de pago. El aviso se revisa cada vez que abres la app.</p>
+        <button class="btn-primary" id="notifyBtn" onclick="toggleNotifications()">Activar notificaciones</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTES -->
+  <section class="page" id="page-reports">
+    <div class="card">
+      <h2>Reporte mensual</h2>
+      <div class="form-row">
+        <input type="month" id="reportMonth" onchange="renderReport()">
+      </div>
+      <div id="reportContent"></div>
+    </div>
+
+    <div class="card">
+      <h2>Exportar / Respaldo</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Descarga tus datos para tener un respaldo o compartirlos con tu socio.</p>
+      <div style="display:grid;gap:8px">
+        <button class="btn-secondary" onclick="exportJSON()">💾 Descargar respaldo (JSON)</button>
+        <button class="btn-secondary" onclick="exportCSV()">📊 Exportar a CSV (Excel)</button>
+        <label class="btn-secondary" style="text-align:center;display:block;cursor:pointer">📥 Importar respaldo<input type="file" accept=".json" onchange="importJSON(event)" style="display:none"></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="page" id="page-settings">
+    <div class="card" id="installCard">
+      <h2>📲 Instalar app</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Instala Açaí Control en tu celular para abrirla como una app normal, con icono propio y sin la barra del navegador.</p>
+      <button class="btn-primary" onclick="installApp()">Instalar en mi dispositivo</button>
+    </div>
+
+    <div class="card">
+      <h2>PIN de acceso</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Cambia el PIN que usan tú y tu socio para entrar.</p>
+      <div class="form-row"><label>Nuevo PIN (4-6 dígitos)</label><input id="newPin" type="password" inputmode="numeric" maxlength="6"></div>
+      <button class="btn-primary" onclick="changePin()">Actualizar PIN</button>
+    </div>
+
+    <div class="card">
+      <h2>Información del negocio</h2>
+      <div class="form-row"><label>Nombre del local</label><input id="bizName" placeholder="Ej: Açaí Bowl"></div>
+      <div class="form-row"><label>Tasa de IVA (%)</label><input id="ivaRateInput" inputmode="numeric" placeholder="19"></div>
+      <button class="btn-primary" onclick="saveBiz()">Guardar</button>
+    </div>
+
+    <div class="card">
+      <h2>☁️ Sincronizar con socio</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Crea un código compartido para que tú y tu socio vean los mismos datos desde sus celulares. Los cambios se suben/bajan al tocar "Sincronizar".</p>
+      <div class="form-row"><label>Código de sincronización</label><input id="syncCodeInput" placeholder="Aún sin código" readonly></div>
+      <div style="display:grid;gap:8px">
+        <button class="btn-primary" onclick="createSyncCode()">🆕 Crear nuevo código</button>
+        <button class="btn-secondary" onclick="enterSyncCode()">🔗 Usar código existente (socio)</button>
+        <button class="btn-secondary" onclick="syncNow()">🔄 Sincronizar ahora</button>
+      </div>
+      <p id="syncStatus" style="color:var(--muted);font-size:12px;margin:12px 0 0;text-align:center"></p>
+    </div>
+
+    <div class="card">
+      <h2>⚠️ Zona peligrosa</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Borra todos los datos. Hazte un respaldo antes.</p>
+      <button class="btn-danger" onclick="wipeAll()">Borrar todos los datos</button>
+    </div>
+
+    <div class="card" style="text-align:center;color:var(--muted);font-size:12px">
+      Açaí Control v1.1 · PWA<br>Hecho con 🍇 para tu negocio
+    </div>
+  </section>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom">
+  <button class="active" data-page="dashboard" onclick="goPage('dashboard')"><span class="icon">📊</span>Resumen</button>
+  <button data-page="sales" onclick="goPage('sales')"><span class="icon">💰</span>Ventas</button>
+  <button data-page="expenses" onclick="goPage('expenses')"><span class="icon">📋</span>Gastos</button>
+  <button data-page="reports" onclick="goPage('reports')"><span class="icon">📈</span>Reportes</button>
+  <button data-page="settings" onclick="goPage('settings')"><span class="icon">⚙️</span>Ajustes</button>
+</nav>
+
+<!-- MODAL: gestionar canales -->
+<div class="modal-bg" id="modalChannels">
+  <div class="modal">
+    <h3>Canales de venta</h3>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Aquí defines de dónde vienen tus ventas (Local, apps de delivery, eventos, etc.) Aparecen en el dropdown al registrar.</p>
+    <ul class="list" id="channelsManageList"></ul>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <div class="form-row"><label>Nuevo canal</label><input id="newChannelName" placeholder="Ej: Eventos, Mayorista..."></div>
+      <button class="btn-primary" onclick="addChannel()">Agregar canal</button>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeModal('modalChannels')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ ALMACENAMIENTO ============
+const DB_KEY = 'acai_control_v1';
+const SESSION_KEY = 'acai_session';
+
+const DEFAULT_DB = {
+  pin: '1234',
+  businessName: 'Mi local de açaí',
+  ivaRate: 19, // % IVA Chile
+  channels: ['Local','Pedidos Ya','Rappi','Uber Eats','Otro'],
+  sales: [],
+  purchases: [],
+  expenses: [],
+  salaries: [],
+  reminders: [
+    {id:'seed-arriendo', name:'Arriendo local', kind:'gasto', category:'Arriendo', dayOfMonth:5, amount:0, notifyDaysBefore:3, active:true, lastPaidMonth:'', createdAt:0, updatedAt:0},
+    {id:'seed-sueldo-mauro', name:'Sueldo Mauro', kind:'sueldo', category:'Mauro', dayOfMonth:30, amount:0, notifyDaysBefore:3, active:true, lastPaidMonth:'', createdAt:0, updatedAt:0},
+    {id:'seed-sueldo-hugo', name:'Sueldo Hugo', kind:'sueldo', category:'Hugo', dayOfMonth:30, amount:0, notifyDaysBefore:3, active:true, lastPaidMonth:'', createdAt:0, updatedAt:0}
+  ],
+  notifyEnabled: false,
+  syncBinId: '' // para sincronización con socio
+};
+
+function pid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(DEFAULT_DB));
+    const db = JSON.parse(raw);
+    // merge missing keys
+    for(const k of Object.keys(DEFAULT_DB)) if(!(k in db)) db[k] = JSON.parse(JSON.stringify(DEFAULT_DB[k]));
+    return db;
+  }catch(e){return JSON.parse(JSON.stringify(DEFAULT_DB))}
+}
+function saveDB(){localStorage.setItem(DB_KEY, JSON.stringify(db))}
+let db = loadDB();
+let currentUser = null;
+let salesChart = null;
+
+// ============ UTILIDADES ============
+const fmtCLP = n => '$' + Math.round(n).toLocaleString('es-CL');
+const parseNum = s => {
+  if(typeof s === 'number') return s;
+  if(!s) return 0;
+  const clean = String(s).replace(/[^0-9.,-]/g,'').replace(/\./g,'').replace(',','.');
+  const n = parseFloat(clean);
+  return isFinite(n) ? n : 0;
+};
+const todayISO = () => new Date().toISOString().slice(0,10);
+const monthISO = () => new Date().toISOString().slice(0,7);
+
+// IVA helpers (precios incluyen IVA)
+function ivaFromGross(gross){
+  const r = (db.ivaRate||19)/100;
+  return gross * r / (1+r); // IVA contenido en un monto bruto
+}
+function netFromGross(gross){
+  return gross - ivaFromGross(gross);
+}
+function inRange(dateStr, period){
+  const d = new Date(dateStr+'T00:00:00');
+  const now = new Date();
+  const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(period==='today') return dateStr === todayISO();
+  if(period==='week'){
+    const start = new Date(today); start.setDate(today.getDate()-today.getDay());
+    return d >= start && d <= today;
+  }
+  if(period==='month'){
+    return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  }
+  if(period==='prev_month'){
+    const pm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    return d.getFullYear()===pm.getFullYear() && d.getMonth()===pm.getMonth();
+  }
+  if(period==='year') return d.getFullYear()===now.getFullYear();
+  if(period==='all') return true;
+  return true;
+}
+function toast(msg, bad){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (bad?' bad':'');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.className='toast',1800);
+}
+
+// ============ LOGIN ============
+let chosenUser = 'Mauro';
+document.querySelectorAll('#userPick button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#userPick button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    chosenUser = b.dataset.user;
+  });
+});
+document.getElementById('pinInput').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin()});
+
+function doLogin(){
+  const pin = document.getElementById('pinInput').value;
+  if(pin !== db.pin){ toast('PIN incorrecto', true); return; }
+  currentUser = chosenUser;
+  sessionStorage.setItem(SESSION_KEY, currentUser);
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('currentUser').textContent = currentUser;
+  initApp();
+}
+function logout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  currentUser = null;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ============ NAVEGACIÓN ============
+function goPage(p){
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.page===p));
+  const titles = {dashboard:'Resumen',sales:'Ventas',expenses:'Compras y Gastos',reports:'Reportes',settings:'Ajustes'};
+  document.getElementById('pageTitle').textContent = titles[p];
+  if(p==='dashboard') renderDashboard();
+  if(p==='sales') renderSales();
+  if(p==='expenses') renderExpensesPage();
+  if(p==='reports') renderReport();
+  if(p==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+
+// ============ DASHBOARD ============
+function renderDashboard(){
+  const period = document.getElementById('dashPeriod').value;
+  const sales = db.sales.filter(s=>inRange(s.date, period));
+  const purchases = db.purchases.filter(p=>inRange(p.date, period));
+  const expenses = db.expenses.filter(e=>inRange(e.date, period));
+  const salaries = db.salaries.filter(s=>inRange(s.date, period));
+
+  const tSales = sales.reduce((a,b)=>a+b.amount,0);
+  const tPurchases = purchases.reduce((a,b)=>a+b.amount,0);
+  const tExpenses = expenses.reduce((a,b)=>a+b.amount,0);
+  const tSalaries = salaries.reduce((a,b)=>a+b.amount,0);
+  const gain = tSales - tPurchases - tExpenses - tSalaries;
+
+  document.getElementById('kpiSales').textContent = fmtCLP(tSales);
+  document.getElementById('kpiSalesCount').textContent = sales.length+' ventas';
+  document.getElementById('kpiPurchases').textContent = fmtCLP(tPurchases);
+  document.getElementById('kpiPurchasesCount').textContent = purchases.length+' movimientos';
+  document.getElementById('kpiExpenses').textContent = fmtCLP(tExpenses);
+  document.getElementById('kpiExpensesCount').textContent = expenses.length+' movimientos';
+  document.getElementById('kpiSalaries').textContent = fmtCLP(tSalaries);
+  document.getElementById('kpiSalariesCount').textContent = salaries.length+' pagos';
+  const gEl = document.getElementById('kpiGain');
+  gEl.textContent = fmtCLP(gain);
+  gEl.className = 'kpi-value ' + (gain >= 0 ? 'good' : 'bad');
+
+  // IVA
+  const ivaDebito = sales.reduce((a,s)=>a+ivaFromGross(s.amount),0);
+  const ivaCredito = purchases.filter(p=>p.hasIva!==false).reduce((a,p)=>a+ivaFromGross(p.amount),0)
+                  + expenses.filter(e=>e.hasIva===true).reduce((a,e)=>a+ivaFromGross(e.amount),0);
+  const ivaDue = ivaDebito - ivaCredito;
+  document.getElementById('kpiIvaSales').textContent = fmtCLP(ivaDebito);
+  document.getElementById('kpiIvaPurchases').textContent = fmtCLP(ivaCredito);
+  const ivaDueEl = document.getElementById('kpiIvaDue');
+  ivaDueEl.textContent = fmtCLP(Math.abs(ivaDue));
+  ivaDueEl.className = 'kpi-value ' + (ivaDue > 0 ? 'warn' : 'good');
+  document.getElementById('kpiIvaDueSub').textContent = ivaDue >= 0
+    ? `A pagar al SII (tasa ${db.ivaRate||19}%)`
+    : `Crédito a favor: ${fmtCLP(-ivaDue)}`;
+  const periodLabels = {today:'(hoy)',week:'(esta semana)',month:'(este mes)',prev_month:'(mes anterior)',year:'(este año)',all:'(todo)'};
+  document.getElementById('ivaPeriodLabel').textContent = periodLabels[period] || '';
+
+  // banner de pagos pendientes
+  renderRemindersBanner();
+
+  // chart: ventas por día (últimos 14 días o periodo)
+  drawSalesChart(period);
+
+  // ventas por canal
+  const chCount = {};
+  sales.forEach(s=>{
+    const name = s.channel || s.productName || 'Sin canal';
+    chCount[name] = chCount[name] || {count:0,total:0};
+    chCount[name].count++;
+    chCount[name].total += s.amount;
+  });
+  const tops = Object.entries(chCount).sort((a,b)=>b[1].total-a[1].total);
+  const tpList = document.getElementById('topChannelsList');
+  if(tops.length===0) tpList.innerHTML = '<li class="empty">Sin ventas en este período</li>';
+  else tpList.innerHTML = tops.map(([name,v])=>{
+    const pct = tSales>0 ? (v.total/tSales*100).toFixed(0) : 0;
+    return `<li><div class="l-main"><div class="l-title">${name}</div><div class="l-sub">${v.count} ventas · ${pct}%</div></div><div class="l-amount in">${fmtCLP(v.total)}</div></li>`;
+  }).join('');
+
+  // movimientos recientes
+  const all = [
+    ...db.sales.map(x=>({...x, _type:'venta', _sign:1})),
+    ...db.purchases.map(x=>({...x, _type:'compra', _sign:-1})),
+    ...db.expenses.map(x=>({...x, _type:'gasto', _sign:-1})),
+    ...db.salaries.map(x=>({...x, _type:'sueldo', _sign:-1}))
+  ].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8);
+  const rList = document.getElementById('recentList');
+  if(all.length===0) rList.innerHTML = '<li class="empty">Aún no hay movimientos</li>';
+  else rList.innerHTML = all.map(m=>{
+    const title = m.channel || m.productName || m.desc || m.category || m.person || m._type;
+    return `<li><div class="l-main"><div class="l-title">${title} <span class="badge">${m._type}</span></div><div class="l-sub">${formatDate(m.date)} · ${m.user||''}</div></div><div class="l-amount ${m._sign>0?'in':'out'}">${m._sign>0?'+':'−'}${fmtCLP(m.amount)}</div></li>`;
+  }).join('');
+}
+
+function drawSalesChart(period){
+  // build last N days of sales
+  let days = 14;
+  if(period==='today') days = 1;
+  else if(period==='week') days = 7;
+  else if(period==='month' || period==='prev_month') days = 31;
+  else if(period==='year') days = 30;
+  const labels = [], data = [];
+  const now = new Date();
+  let endRef = now;
+  if(period==='prev_month') endRef = new Date(now.getFullYear(), now.getMonth(), 0);
+  for(let i=days-1;i>=0;i--){
+    const d = new Date(endRef); d.setDate(endRef.getDate()-i);
+    const iso = d.toISOString().slice(0,10);
+    labels.push(d.getDate()+'/'+(d.getMonth()+1));
+    const total = db.sales.filter(s=>s.date===iso).reduce((a,b)=>a+b.amount,0);
+    data.push(total);
+  }
+  document.getElementById('chartLabel').textContent = '(últimos '+days+' días)';
+  const ctx = document.getElementById('chartSales');
+  if(salesChart) salesChart.destroy();
+  salesChart = new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets:[{label:'Ventas', data, backgroundColor:'rgba(168,85,247,.7)', borderRadius:6}]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtCLP(c.parsed.y)}}},
+      scales:{
+        x:{ticks:{color:'#a39bb5',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#a39bb5',font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(255,255,255,.05)'}}
+      }
+    }
+  });
+}
+
+function formatDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ============ CANALES DE VENTA ============
+function refreshChannelDropdown(){
+  const sel = document.getElementById('sChannelInput');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = (db.channels||[]).map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(cur && db.channels.includes(cur)) sel.value = cur;
+}
+function openChannelManager(){
+  const list = document.getElementById('channelsManageList');
+  if(!db.channels || db.channels.length===0) list.innerHTML = '<li class="empty">Sin canales</li>';
+  else list.innerHTML = db.channels.map(c=>`
+    <li>
+      <div class="l-main"><div class="l-title">${c}</div></div>
+      <button class="btn-danger" onclick="deleteChannel('${c.replace(/'/g,"\\'")}')">Eliminar</button>
+    </li>`).join('');
+  document.getElementById('newChannelName').value='';
+  openModal('modalChannels');
+}
+function addChannel(){
+  const name = document.getElementById('newChannelName').value.trim();
+  if(!name){ toast('Nombre requerido', true); return; }
+  if(db.channels.includes(name)){ toast('Ya existe', true); return; }
+  db.channels.push(name);
+  saveDB(); openChannelManager(); refreshChannelDropdown();
+  toast('Canal agregado');
+}
+function deleteChannel(name){
+  if(!confirm('¿Eliminar el canal "'+name+'"? Las ventas pasadas no se borran.')) return;
+  db.channels = db.channels.filter(c=>c!==name);
+  saveDB(); openChannelManager(); refreshChannelDropdown();
+}
+
+// ============ VENTAS ============
+function addSale(){
+  const date = document.getElementById('sDateInput').value || todayISO();
+  const channel = document.getElementById('sChannelInput').value;
+  const amount = parseNum(document.getElementById('sAmountInput').value);
+  const notes = document.getElementById('sNotesInput').value.trim();
+  if(amount<=0){ toast('Monto inválido', true); return; }
+  db.sales.push({
+    id: pid(), date, amount,
+    channel, notes,
+    user: currentUser, createdAt: Date.now()
+  });
+  saveDB();
+  document.getElementById('sAmountInput').value='';
+  document.getElementById('sNotesInput').value='';
+  renderSales();
+  toast('Venta registrada ✓');
+}
+function deleteSale(id){
+  if(!confirm('¿Eliminar esta venta?')) return;
+  db.sales = db.sales.filter(s=>s.id!==id);
+  saveDB(); renderSales();
+}
+function renderSales(){
+  // defaults
+  if(!document.getElementById('sDateInput').value) document.getElementById('sDateInput').value = todayISO();
+  refreshChannelDropdown();
+  // hoy
+  const today = todayISO();
+  const todaySales = db.sales.filter(s=>s.date===today).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const total = todaySales.reduce((a,b)=>a+b.amount,0);
+  document.getElementById('todaySalesTotal').textContent = fmtCLP(total);
+  const list = document.getElementById('todaySalesList');
+  if(todaySales.length===0) list.innerHTML = '<li class="empty">Aún no hay ventas hoy</li>';
+  else list.innerHTML = todaySales.map(s=>`
+    <li>
+      <div class="l-main"><div class="l-title">${s.channel||s.productName||'Venta'}</div><div class="l-sub">${s.notes||''}${s.notes&&s.user?' · ':''}${s.user||''}</div></div>
+      <div class="l-amount in">${fmtCLP(s.amount)}</div>
+      <button class="l-del" onclick="deleteSale('${s.id}')">✕</button>
+    </li>`).join('');
+  renderSalesHistory();
+}
+function renderSalesHistory(){
+  const from = document.getElementById('salesFilterFrom').value;
+  const to = document.getElementById('salesFilterTo').value;
+  let list = [...db.sales];
+  if(from) list = list.filter(s=>s.date>=from);
+  if(to) list = list.filter(s=>s.date<=to);
+  list = list.filter(s=>s.date!==todayISO()).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const el = document.getElementById('salesHistoryList');
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin ventas en este rango</li>'; return; }
+  const byDay = {};
+  list.forEach(s=>{ (byDay[s.date]=byDay[s.date]||[]).push(s) });
+  el.innerHTML = Object.entries(byDay).map(([day,items])=>{
+    const tot = items.reduce((a,b)=>a+b.amount,0);
+    // resumen por canal del día
+    const byCh = {};
+    items.forEach(it=>{ const c = it.channel||it.productName||'Otro'; byCh[c]=(byCh[c]||0)+it.amount; });
+    const chSummary = Object.entries(byCh).map(([c,v])=>`${c}: ${fmtCLP(v)}`).join(' · ');
+    return `<li style="background:var(--card-2);padding:10px 12px;border-radius:10px;margin-top:10px"><div class="l-main"><div class="l-title">📅 ${formatDate(day)}</div><div class="l-sub">${chSummary}</div></div><div class="l-amount in">${fmtCLP(tot)}</div></li>`+
+      items.map(s=>`<li><div class="l-main"><div class="l-title">${s.channel||s.productName||'Venta'}</div><div class="l-sub">${s.notes||s.user||''}</div></div><div class="l-amount in">${fmtCLP(s.amount)}</div><button class="l-del" onclick="deleteSale('${s.id}')">✕</button></li>`).join('');
+  }).join('');
+}
+
+// ============ COMPRAS / GASTOS / SUELDOS ============
+function switchExpTab(t){
+  document.querySelectorAll('[data-exp-tab]').forEach(b=>b.classList.toggle('active', b.dataset.expTab===t));
+  ['purchases','expenses','salaries','reminders'].forEach(x=>document.getElementById('tab-'+x).style.display = (x===t?'block':'none'));
+  renderExpensesPage();
+}
+function renderExpensesPage(){
+  // dates default
+  ['pDate','eDate','sDate'].forEach(id=>{ const el=document.getElementById(id); if(el && !el.value) el.value = todayISO(); });
+  if(!document.getElementById('sMonth').value) document.getElementById('sMonth').value = monthISO();
+  renderPurchases(); renderExpenses(); renderSalaries(); renderRemindersPage();
+}
+function addPurchase(){
+  const desc = document.getElementById('pDesc').value.trim();
+  const amount = parseNum(document.getElementById('pAmount').value);
+  const date = document.getElementById('pDate').value || todayISO();
+  const supplier = document.getElementById('pSupplier').value.trim();
+  const hasIva = document.getElementById('pHasIva').checked;
+  if(!desc || amount<=0){ toast('Descripción y monto requeridos', true); return; }
+  db.purchases.push({id:pid(), date, amount, desc, supplier, hasIva, user: currentUser, createdAt: Date.now()});
+  saveDB();
+  document.getElementById('pDesc').value=''; document.getElementById('pAmount').value=''; document.getElementById('pSupplier').value='';
+  renderPurchases(); toast('Compra guardada');
+}
+function deletePurchase(id){ if(!confirm('¿Eliminar?')) return; db.purchases = db.purchases.filter(x=>x.id!==id); saveDB(); renderPurchases(); }
+function renderPurchases(){
+  const month = monthISO();
+  const list = db.purchases.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
+  document.getElementById('purchaseMonthTotal').textContent = fmtCLP(monthTotal);
+  const el = document.getElementById('purchasesList');
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin compras registradas</li>'; return; }
+  el.innerHTML = list.slice(0,30).map(p=>`
+    <li>
+      <div class="l-main"><div class="l-title">${p.desc}</div><div class="l-sub">${formatDate(p.date)}${p.supplier?' · '+p.supplier:''}</div></div>
+      <div class="l-amount out">−${fmtCLP(p.amount)}</div>
+      <button class="l-del" onclick="deletePurchase('${p.id}')">✕</button>
+    </li>`).join('');
+}
+
+function addExpense(){
+  const cat = document.getElementById('eCategory').value;
+  const amount = parseNum(document.getElementById('eAmount').value);
+  const desc = document.getElementById('eDesc').value.trim();
+  const date = document.getElementById('eDate').value || todayISO();
+  const hasIva = document.getElementById('eHasIva').checked;
+  if(amount<=0){ toast('Monto requerido', true); return; }
+  db.expenses.push({id:pid(), date, amount, category:cat, desc, hasIva, user: currentUser, createdAt: Date.now()});
+  saveDB();
+  document.getElementById('eAmount').value=''; document.getElementById('eDesc').value=''; document.getElementById('eHasIva').checked=false;
+  renderExpenses(); toast('Gasto guardado');
+}
+function deleteExpense(id){ if(!confirm('¿Eliminar?')) return; db.expenses = db.expenses.filter(x=>x.id!==id); saveDB(); renderExpenses(); }
+function renderExpenses(){
+  const month = monthISO();
+  const list = db.expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
+  document.getElementById('expenseMonthTotal').textContent = fmtCLP(monthTotal);
+  const el = document.getElementById('expensesList');
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin gastos registrados</li>'; return; }
+  el.innerHTML = list.slice(0,30).map(p=>`
+    <li>
+      <div class="l-main"><div class="l-title">${p.category}${p.desc?' — '+p.desc:''}</div><div class="l-sub">${formatDate(p.date)}</div></div>
+      <div class="l-amount out">−${fmtCLP(p.amount)}</div>
+      <button class="l-del" onclick="deleteExpense('${p.id}')">✕</button>
+    </li>`).join('');
+}
+
+function addSalary(){
+  const person = document.getElementById('sPerson').value.trim();
+  const amount = parseNum(document.getElementById('sAmount').value);
+  const date = document.getElementById('sDate').value || todayISO();
+  const month = document.getElementById('sMonth').value || monthISO();
+  if(!person || amount<=0){ toast('Persona y monto requeridos', true); return; }
+  db.salaries.push({id:pid(), date, amount, person, month, user: currentUser, createdAt: Date.now()});
+  saveDB();
+  document.getElementById('sPerson').value=''; document.getElementById('sAmount').value='';
+  renderSalaries(); toast('Sueldo guardado');
+}
+function deleteSalary(id){ if(!confirm('¿Eliminar?')) return; db.salaries = db.salaries.filter(x=>x.id!==id); saveDB(); renderSalaries(); }
+function renderSalaries(){
+  const month = monthISO();
+  const list = db.salaries.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
+  document.getElementById('salaryMonthTotal').textContent = fmtCLP(monthTotal);
+  const el = document.getElementById('salariesList');
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin sueldos registrados</li>'; return; }
+  el.innerHTML = list.slice(0,30).map(p=>`
+    <li>
+      <div class="l-main"><div class="l-title">${p.person}</div><div class="l-sub">${formatDate(p.date)} · ${p.month||''}</div></div>
+      <div class="l-amount out">−${fmtCLP(p.amount)}</div>
+      <button class="l-del" onclick="deleteSalary('${p.id}')">✕</button>
+    </li>`).join('');
+}
+
+// ============ RECORDATORIOS DE PAGO ============
+function daysInMonth(year, monthIndex){ return new Date(year, monthIndex+1, 0).getDate(); }
+
+function reminderDueDate(rem, refDate){
+  const y = refDate.getFullYear(), m = refDate.getMonth();
+  const day = Math.min(rem.dayOfMonth || 1, daysInMonth(y, m));
+  return new Date(y, m, day);
+}
+
+function getDueReminders(){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const curMonth = monthISO();
+  const out = [];
+  (db.reminders||[]).forEach(r=>{
+    if(!r.active) return;
+    if(r.lastPaidMonth === curMonth) return; // ya pagado este mes
+    const due = reminderDueDate(r, today);
+    const notifyFrom = new Date(due);
+    notifyFrom.setDate(due.getDate() - (r.notifyDaysBefore||3));
+    if(today >= notifyFrom){
+      out.push({...r, _due: due, _overdue: today > due});
+    }
+  });
+  out.sort((a,b)=> (b._overdue-a._overdue) || (a._due-b._due));
+  return out;
+}
+
+function renderRemindersBanner(){
+  const el = document.getElementById('remindersBanner');
+  if(!el) return;
+  const due = getDueReminders();
+  if(due.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = `
+    <div class="card" style="border-color:#f59e0b;background:linear-gradient(135deg,#3a2410,#1c1028)">
+      <h2 style="color:#f59e0b">🔔 Pagos pendientes (${due.length})</h2>
+      <ul class="list">
+        ${due.map(r=>{
+          const badge = r._overdue
+            ? '<span class="badge" style="background:rgba(239,68,68,.25);color:#fca5a5">vencido</span>'
+            : '<span class="badge" style="background:rgba(245,158,11,.25);color:#fcd34d">próximo</span>';
+          const amt = r.amount>0 ? fmtCLP(r.amount) : 'monto a definir';
+          return `<li>
+            <div class="l-main">
+              <div class="l-title">${r.name} ${badge}</div>
+              <div class="l-sub">Vence ${formatDate(r._due.toISOString().slice(0,10))} · ${amt}</div>
+            </div>
+            <button class="btn-secondary" style="padding:8px 10px;font-size:12px;white-space:nowrap" onclick="markReminderPaid('${r.id}')">Pagado ✓</button>
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>`;
+}
+
+function markReminderPaid(id){
+  const r = (db.reminders||[]).find(x=>x.id===id);
+  if(!r) return;
+  const def = r.amount>0 ? String(r.amount) : '';
+  const input = prompt('¿Cuánto pagaste de "'+r.name+'"?', def);
+  if(input===null) return;
+  const amount = parseNum(input);
+  if(amount<=0){ toast('Monto inválido', true); return; }
+  const date = todayISO();
+  const curMonth = monthISO();
+  if(r.kind==='sueldo'){
+    db.salaries.push({id:pid(), date, amount, person:r.category||r.name, month:curMonth, user:currentUser, createdAt:Date.now()});
+  } else {
+    db.expenses.push({id:pid(), date, amount, category:r.category||'Otro', desc:r.name, hasIva:false, user:currentUser, createdAt:Date.now()});
+  }
+  r.lastPaidMonth = curMonth;
+  r.updatedAt = Date.now();
+  saveDB();
+  renderDashboard();
+  if(document.getElementById('page-expenses').classList.contains('active')) renderExpensesPage();
+  toast('Pago registrado ✓');
+}
+
+function onReminderKindChange(){
+  const kind = document.getElementById('rKind').value;
+  document.getElementById('rCategoryRow').style.display = kind==='gasto' ? 'block' : 'none';
+  document.getElementById('rPersonRow').style.display = kind==='sueldo' ? 'block' : 'none';
+}
+
+function addReminder(){
+  const name = document.getElementById('rName').value.trim();
+  const kind = document.getElementById('rKind').value;
+  const day = parseInt(document.getElementById('rDay').value,10);
+  const amount = parseNum(document.getElementById('rAmount').value);
+  const notifyDays = parseInt(document.getElementById('rNotifyDays').value,10) || 3;
+  const category = kind==='sueldo'
+    ? document.getElementById('rPerson').value.trim()
+    : document.getElementById('rCategory').value;
+  if(!name){ toast('Nombre requerido', true); return; }
+  if(!(day>=1 && day<=31)){ toast('Día de pago debe ser entre 1 y 31', true); return; }
+  if(kind==='sueldo' && !category){ toast('Indica la persona', true); return; }
+  db.reminders.push({
+    id:pid(), name, kind, category, dayOfMonth:day, amount,
+    notifyDaysBefore:notifyDays, active:true, lastPaidMonth:'',
+    createdAt:Date.now(), updatedAt:Date.now()
+  });
+  saveDB();
+  ['rName','rDay','rAmount','rNotifyDays','rPerson'].forEach(id=>document.getElementById(id).value='');
+  renderRemindersPage(); renderRemindersBanner();
+  toast('Recordatorio guardado ✓');
+}
+
+function toggleReminder(id){
+  const r=(db.reminders||[]).find(x=>x.id===id); if(!r) return;
+  r.active=!r.active; r.updatedAt=Date.now();
+  saveDB(); renderRemindersPage(); renderRemindersBanner();
+}
+function deleteReminder(id){
+  if(!confirm('¿Eliminar este recordatorio?')) return;
+  db.reminders=(db.reminders||[]).filter(x=>x.id!==id);
+  saveDB(); renderRemindersPage(); renderRemindersBanner();
+}
+
+function renderRemindersPage(){
+  const el = document.getElementById('remindersList');
+  if(!el) return;
+  const rems = db.reminders||[];
+  if(rems.length===0){
+    el.innerHTML='<li class="empty">Sin recordatorios. Agrega uno arriba.</li>';
+  } else {
+    const curMonth = monthISO();
+    el.innerHTML = rems.slice().sort((a,b)=>a.dayOfMonth-b.dayOfMonth).map(r=>{
+      const paid = r.lastPaidMonth===curMonth;
+      const tipo = r.kind==='sueldo' ? 'Sueldo' : 'Gasto';
+      const detail = tipo+' · '+(r.category||'')+' · día '+r.dayOfMonth+(r.amount>0?' · '+fmtCLP(r.amount):'');
+      const tags = (r.active?'':' <span class="badge">pausado</span>')
+                 + (paid?' <span class="badge" style="background:rgba(34,197,94,.2);color:#86efac">pagado este mes</span>':'');
+      return `<li>
+        <div class="l-main">
+          <div class="l-title">${r.name}${tags}</div>
+          <div class="l-sub">${detail}</div>
+        </div>
+        <button class="btn-secondary" style="padding:6px 9px;font-size:12px" onclick="toggleReminder('${r.id}')">${r.active?'Pausar':'Activar'}</button>
+        <button class="l-del" onclick="deleteReminder('${r.id}')">✕</button>
+      </li>`;
+    }).join('');
+  }
+  updateNotifyButton();
+}
+
+// ---- Notificaciones del sistema ----
+function updateNotifyButton(){
+  const btn=document.getElementById('notifyBtn');
+  if(!btn) return;
+  if(!('Notification' in window)){ btn.textContent='No disponible en este navegador'; btn.disabled=true; return; }
+  if(Notification.permission==='denied'){
+    btn.textContent='Bloqueadas (actívalas en ajustes del navegador)';
+  } else if(Notification.permission==='granted' && db.notifyEnabled){
+    btn.textContent='✓ Notificaciones activadas (toca para desactivar)';
+  } else {
+    btn.textContent='Activar notificaciones';
+  }
+}
+function toggleNotifications(){
+  if(!('Notification' in window)){ toast('No disponible aquí', true); return; }
+  if(Notification.permission==='granted'){
+    db.notifyEnabled=!db.notifyEnabled; saveDB(); updateNotifyButton();
+    toast(db.notifyEnabled?'Notificaciones activadas':'Notificaciones desactivadas');
+    if(db.notifyEnabled){ sessionStorage.removeItem('acai_notified'); checkAndNotify(); }
+    return;
+  }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){
+      db.notifyEnabled=true; saveDB(); updateNotifyButton();
+      toast('Notificaciones activadas ✓');
+      sessionStorage.removeItem('acai_notified'); checkAndNotify();
+    } else {
+      toast('Permiso denegado', true); updateNotifyButton();
+    }
+  });
+}
+function checkAndNotify(){
+  if(!db.notifyEnabled) return;
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  if(sessionStorage.getItem('acai_notified')) return; // solo una vez por sesión
+  const due=getDueReminders();
+  if(due.length===0) return;
+  sessionStorage.setItem('acai_notified','1');
+  const title = due.length===1 ? 'Pago pendiente' : due.length+' pagos pendientes';
+  const body = due.map(r=>r.name+(r._overdue?' (vencido)':'')).join(', ');
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,{
+        body, icon:'icon-192.png', badge:'icon-192.png', tag:'acai-pagos'
+      })).catch(()=>{ new Notification(title,{body,icon:'icon-192.png'}); });
+    } else {
+      new Notification(title,{body,icon:'icon-192.png'});
+    }
+  }catch(e){}
+}
+
+// ============ REPORTES ============
+function renderReport(){
+  const monthInput = document.getElementById('reportMonth');
+  if(!monthInput.value) monthInput.value = monthISO();
+  const m = monthInput.value;
+  const sales = db.sales.filter(s=>s.date.startsWith(m));
+  const purchases = db.purchases.filter(s=>s.date.startsWith(m));
+  const expenses = db.expenses.filter(s=>s.date.startsWith(m));
+  const salaries = db.salaries.filter(s=>s.date.startsWith(m));
+
+  const tS = sales.reduce((a,b)=>a+b.amount,0);
+  const tP = purchases.reduce((a,b)=>a+b.amount,0);
+  const tE = expenses.reduce((a,b)=>a+b.amount,0);
+  const tSa = salaries.reduce((a,b)=>a+b.amount,0);
+  const gain = tS - tP - tE - tSa;
+  const margin = tS>0 ? (gain/tS*100).toFixed(1) : 0;
+
+  // IVA mes
+  const ivaDeb = sales.reduce((a,s)=>a+ivaFromGross(s.amount),0);
+  const ivaCred = purchases.filter(p=>p.hasIva!==false).reduce((a,p)=>a+ivaFromGross(p.amount),0)
+                + expenses.filter(e=>e.hasIva===true).reduce((a,e)=>a+ivaFromGross(e.amount),0);
+  const ivaDue = ivaDeb - ivaCred;
+  const ventasNetas = tS - ivaDeb;
+
+  const expByCat = {};
+  expenses.forEach(e=>{ expByCat[e.category] = (expByCat[e.category]||0)+e.amount });
+  const catRows = Object.entries(expByCat).sort((a,b)=>b[1]-a[1])
+    .map(([c,v])=>`<li><div class="l-main"><div class="l-title">${c}</div></div><div class="l-amount out">${fmtCLP(v)}</div></li>`).join('') || '<li class="empty">Sin gastos</li>';
+
+  const chSales = {};
+  sales.forEach(s=>{ const n = s.channel||s.productName||'Sin canal'; chSales[n]=chSales[n]||{n:0,t:0}; chSales[n].n++; chSales[n].t+=s.amount });
+  const chRows = Object.entries(chSales).sort((a,b)=>b[1].t-a[1].t)
+    .map(([n,v])=>{ const pct = tS>0?(v.t/tS*100).toFixed(0):0; return `<li><div class="l-main"><div class="l-title">${n}</div><div class="l-sub">${v.n} ventas · ${pct}%</div></div><div class="l-amount in">${fmtCLP(v.t)}</div></li>` }).join('') || '<li class="empty">Sin ventas</li>';
+
+  document.getElementById('reportContent').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi full">
+        <div class="kpi-label">Ganancia neta del mes</div>
+        <div class="kpi-value ${gain>=0?'good':'bad'}">${fmtCLP(gain)}</div>
+        <div class="kpi-sub">Margen: ${margin}% · ${sales.length} ventas</div>
+      </div>
+      <div class="kpi"><div class="kpi-label">Ventas (bruto)</div><div class="kpi-value good">${fmtCLP(tS)}</div><div class="kpi-sub">Neto: ${fmtCLP(ventasNetas)}</div></div>
+      <div class="kpi"><div class="kpi-label">Compras</div><div class="kpi-value bad">${fmtCLP(tP)}</div></div>
+      <div class="kpi"><div class="kpi-label">Gastos fijos</div><div class="kpi-value bad">${fmtCLP(tE)}</div></div>
+      <div class="kpi"><div class="kpi-label">Sueldos</div><div class="kpi-value bad">${fmtCLP(tSa)}</div></div>
+    </div>
+
+    <h3 style="margin:18px 0 8px;font-size:15px">💰 Declaración de IVA del mes</h3>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">IVA Débito</div><div class="kpi-value good">${fmtCLP(ivaDeb)}</div><div class="kpi-sub">de las ventas</div></div>
+      <div class="kpi"><div class="kpi-label">IVA Crédito</div><div class="kpi-value" style="color:#a39bb5">${fmtCLP(ivaCred)}</div><div class="kpi-sub">de compras con factura</div></div>
+      <div class="kpi full"><div class="kpi-label">${ivaDue>=0?'IVA a pagar al SII':'Crédito a favor'}</div><div class="kpi-value ${ivaDue>=0?'warn':'good'}">${fmtCLP(Math.abs(ivaDue))}</div></div>
+    </div>
+
+    <h3 style="margin:18px 0 8px;font-size:15px">Ventas por canal</h3>
+    <ul class="list">${chRows}</ul>
+    <h3 style="margin:18px 0 8px;font-size:15px">Gastos por categoría</h3>
+    <ul class="list">${catRows}</ul>
+  `;
+}
+
+// ============ EXPORTAR / IMPORTAR ============
+function exportJSON(){
+  const data = JSON.stringify(db, null, 2);
+  downloadFile('acai-respaldo-'+todayISO()+'.json', data, 'application/json');
+  toast('Respaldo descargado');
+}
+function exportCSV(){
+  const rows = [['tipo','fecha','descripcion','canal_o_categoria','persona_o_proveedor','monto','usuario']];
+  db.sales.forEach(s=>rows.push(['venta',s.date,s.notes||'',s.channel||s.productName||'','',s.amount,s.user||'']));
+  db.purchases.forEach(s=>rows.push(['compra',s.date,s.desc||'','',s.supplier||'',-s.amount,s.user||'']));
+  db.expenses.forEach(s=>rows.push(['gasto',s.date,s.desc||'',s.category||'','',-s.amount,s.user||'']));
+  db.salaries.forEach(s=>rows.push(['sueldo',s.date,'',s.month||'',s.person||'',-s.amount,s.user||'']));
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  downloadFile('acai-movimientos-'+todayISO()+'.csv', '﻿'+csv, 'text/csv');
+  toast('CSV exportado');
+}
+function importJSON(e){
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!data.sales || !data.purchases){ toast('Archivo inválido', true); return; }
+      if(!confirm('¿Reemplazar todos los datos actuales con este respaldo?')) return;
+      db = data; saveDB(); renderDashboard(); renderSettings();
+      toast('Datos importados ✓');
+    }catch(err){ toast('Error al leer archivo', true); }
+  };
+  reader.readAsText(f);
+}
+function downloadFile(name, content, type){
+  const blob = new Blob([content],{type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+// ============ AJUSTES ============
+function renderSettings(){
+  document.getElementById('bizName').value = db.businessName || '';
+  document.getElementById('ivaRateInput').value = db.ivaRate || 19;
+  document.getElementById('syncCodeInput').value = db.syncBinId || '';
+}
+function changePin(){
+  const np = document.getElementById('newPin').value;
+  if(!/^\d{4,6}$/.test(np)){ toast('PIN debe tener 4-6 dígitos', true); return; }
+  db.pin = np; saveDB();
+  document.getElementById('newPin').value='';
+  toast('PIN actualizado');
+}
+function saveBiz(){
+  db.businessName = document.getElementById('bizName').value.trim();
+  const rate = parseFloat(document.getElementById('ivaRateInput').value);
+  if(rate>0 && rate<100) db.ivaRate = rate;
+  saveDB(); toast('Guardado'); renderDashboard();
+}
+
+// ============ SINCRONIZACIÓN EN LA NUBE (jsonblob.com) ============
+// Usa jsonblob.com: almacenamiento JSON gratuito sin registro.
+// El "blob" actúa como una carpeta compartida entre tu celu y el de tu socio.
+const SYNC_API = 'https://jsonblob.com/api/jsonBlob';
+
+async function createSyncCode(){
+  if(db.syncBinId && !confirm('Ya tienes un código. ¿Crear uno nuevo?')) return;
+  document.getElementById('syncStatus').textContent = 'Creando código...';
+  try{
+    const res = await fetch(SYNC_API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify(db)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const loc = res.headers.get('Location') || '';
+    const binId = loc.split('/').pop();
+    if(!binId) throw new Error('Sin ID en respuesta');
+    db.syncBinId = binId;
+    saveDB();
+    document.getElementById('syncCodeInput').value = binId;
+    document.getElementById('syncStatus').innerHTML = '✓ Código creado. Compártelo con tu socio por WhatsApp:<br><b style="color:#f59e0b;user-select:all;word-break:break-all">'+binId+'</b>';
+    toast('Código creado ✓');
+  }catch(e){
+    document.getElementById('syncStatus').textContent = 'Error al crear código. Revisa conexión a internet.';
+    toast('Error de sincronización', true);
+  }
+}
+
+function enterSyncCode(){
+  const code = prompt('Ingresa el código de sincronización que te compartió tu socio:');
+  if(!code) return;
+  if(!confirm('Esto bajará los datos del código y los combinará con los tuyos. ¿Continuar?')) return;
+  db.syncBinId = code.trim();
+  saveDB();
+  document.getElementById('syncCodeInput').value = db.syncBinId;
+  syncNow();
+}
+
+async function syncNow(){
+  if(!db.syncBinId){ toast('Primero crea o ingresa un código', true); return; }
+  document.getElementById('syncStatus').textContent = 'Sincronizando...';
+  try{
+    // 1. Bajar lo remoto
+    const res = await fetch(SYNC_API+'/'+db.syncBinId, {headers:{'Accept':'application/json'}});
+    if(!res.ok) throw new Error('No se pudo descargar (código inválido?)');
+    const remote = await res.json();
+    // 2. Mergear local + remoto por ID
+    db = mergeDB(db, remote);
+    saveDB();
+    // 3. Subir el resultado merged
+    const up = await fetch(SYNC_API+'/'+db.syncBinId, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify(db)
+    });
+    if(!up.ok) throw new Error('No se pudo subir');
+    document.getElementById('syncStatus').textContent = '✓ Sincronizado a las ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    renderDashboard();
+    toast('Sincronizado ✓');
+  }catch(e){
+    document.getElementById('syncStatus').textContent = 'Error: ' + e.message;
+    toast('Error al sincronizar', true);
+  }
+}
+
+function mergeDB(local, remote){
+  // Merge por ID: si existe en ambos, gana el más reciente. Combina listas.
+  const out = JSON.parse(JSON.stringify(local));
+  const ts = x => Math.max(x.createdAt||0, x.updatedAt||0);
+  ['sales','purchases','expenses','salaries','reminders'].forEach(key=>{
+    const localMap = new Map((local[key]||[]).map(x=>[x.id,x]));
+    const remoteMap = new Map((remote[key]||[]).map(x=>[x.id,x]));
+    const ids = new Set([...localMap.keys(), ...remoteMap.keys()]);
+    out[key] = [];
+    ids.forEach(id=>{
+      const a = localMap.get(id), b = remoteMap.get(id);
+      if(a && b) out[key].push(ts(a) >= ts(b) ? a : b);
+      else out[key].push(a || b);
+    });
+  });
+  // Settings: prefiere los del remoto si el local es default
+  if(remote.businessName) out.businessName = remote.businessName;
+  if(remote.ivaRate) out.ivaRate = remote.ivaRate;
+  if(remote.pin) out.pin = remote.pin;
+  // Canales: unión de ambos dispositivos
+  if(remote.channels) out.channels = Array.from(new Set([...(local.channels||[]), ...remote.channels]));
+  return out;
+}
+
+// Auto-sync al iniciar si hay código
+async function autoSync(){
+  if(db.syncBinId){
+    try{ await syncNow(); }catch(e){}
+  }
+}
+function wipeAll(){
+  if(!confirm('Esto borrará TODOS los datos. ¿Estás seguro?')) return;
+  if(!confirm('Última oportunidad. ¿Confirmas?')) return;
+  localStorage.removeItem(DB_KEY);
+  db = loadDB(); saveDB();
+  toast('Datos borrados');
+  renderDashboard();
+}
+
+// ============ MODAL ============
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }));
+
+// ============ INIT ============
+function initApp(){
+  renderDashboard();
+  if(db.syncBinId) setTimeout(()=>syncNow(), 500);
+  setTimeout(()=>checkAndNotify(), 1200);
+}
+
+// auto-login si hay sesión
+const savedUser = sessionStorage.getItem(SESSION_KEY);
+if(savedUser){
+  currentUser = savedUser;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('currentUser').textContent = currentUser;
+  initApp();
+}
+
+// ============ PWA: SERVICE WORKER + INSTALACIÓN ============
+let deferredInstallPrompt = null;
+
+// Registrar el service worker (funciona offline + instalable)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+// Capturar el evento de instalación de Chrome/Android
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
+// Si ya está instalada, ocultar la tarjeta
+window.addEventListener('appinstalled', ()=>{
+  deferredInstallPrompt = null;
+  const card = document.getElementById('installCard');
+  if(card) card.style.display = 'none';
+  toast('App instalada');
+});
+
+// Si la app ya corre en modo standalone (instalada), ocultar la tarjeta
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+if(isStandalone()){
+  const card = document.getElementById('installCard');
+  if(card) card.style.display = 'none';
+}
+
+function installApp(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(()=>{ deferredInstallPrompt = null; });
+  } else {
+    alert('Para instalar en iPhone (Safari):\n\n1. Toca el boton Compartir (cuadro con flecha hacia arriba)\n2. Elige "Agregar a pantalla de inicio"\n3. Toca "Agregar"\n\nEn Android con Chrome aparece sola la opcion "Instalar app" en el menu.');
+  }
+}
+</script>
+</body>
+</html>
