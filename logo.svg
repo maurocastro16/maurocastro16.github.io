@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#f0e6ff"/>
+
+  <!-- Palm tree -->
+  <!-- Trunk -->
+  <path d="M256 480 Q252 400 248 340 Q252 320 256 310 Q260 320 264 340 Q260 400 256 480Z" fill="#4a1e8c"/>
+  <!-- Trunk curve -->
+  <path d="M256 380 Q240 360 230 340 Q242 348 256 360Z" fill="#4a1e8c"/>
+  <path d="M256 380 Q272 360 282 340 Q270 348 256 360Z" fill="#4a1e8c"/>
+
+  <!-- Left fronds -->
+  <path d="M256 310 Q220 270 175 255 Q195 275 210 295 Q230 290 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q210 260 165 230 Q188 258 205 282 Q228 285 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q215 280 185 240 Q195 265 210 280 Q232 285 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q230 275 215 240 Q222 265 232 282 Q244 290 256 310Z" fill="#4a1e8c"/>
+  <!-- Far left -->
+  <path d="M256 310 Q200 275 158 265 Q180 278 198 292 Q225 292 256 310Z" fill="#4a1e8c"/>
+
+  <!-- Right fronds -->
+  <path d="M256 310 Q292 270 337 255 Q317 275 302 295 Q282 290 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q302 260 347 230 Q324 258 307 282 Q284 285 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q297 280 327 240 Q317 265 302 280 Q280 285 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q282 275 297 240 Q290 265 280 282 Q268 290 256 310Z" fill="#4a1e8c"/>
+  <!-- Far right -->
+  <path d="M256 310 Q312 275 354 265 Q332 278 314 292 Q287 292 256 310Z" fill="#4a1e8c"/>
+
+  <!-- Top center fronds -->
+  <path d="M256 310 Q255 265 256 225 Q258 265 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q248 265 240 230 Q250 262 256 310Z" fill="#4a1e8c"/>
+  <path d="M256 310 Q264 265 272 230 Q262 262 256 310Z" fill="#4a1e8c"/>
+
+  <!-- AÇAÍ text -->
+  <text x="256" y="390"
+    font-family="Arial Black, Arial, sans-serif"
+    font-weight="900"
+    font-size="92"
+    fill="#4a1e8c"
+    text-anchor="middle"
+    letter-spacing="-2">AÇAÍ</text>
+
+  <!-- POINT text -->
+  <text x="256" y="462"
+    font-family="Arial Black, Arial, sans-serif"
+    font-weight="900"
+    font-size="92"
+    fill="#4a1e8c"
+    text-anchor="middle"
+    letter-spacing="-2">POINT</text>
+
+  <!-- Smile curve -->
+  <path d="M175 478 Q256 510 337 478" stroke="#4a1e8c" stroke-width="10" fill="none" stroke-linecap="round"/>
+</svg>
