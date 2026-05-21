@@ -11,6 +11,24 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAvYvdgHFvkwi7gdITFxTHDSWxP_bmHTm8",
+    authDomain: "acai-control-f7a65.firebaseapp.com",
+    projectId: "acai-control-f7a65",
+    storageBucket: "acai-control-f7a65.firebasestorage.app",
+    messagingSenderId: "705126554798",
+    appId: "1:705126554798:web:b4c455220c9ea64e35a13f"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const fstore = getFirestore(fbApp);
+  const fbDocRef = doc(fstore, 'acai', 'data');
+  window._fsSet = (data) => setDoc(fbDocRef, data);
+  window._fsListen = (cb) => onSnapshot(fbDocRef, cb);
+  window.dispatchEvent(new CustomEvent('firebase-ready'));
+</script>
 <style>
   :root{
     --bg:#0f0716;
@@ -432,15 +450,9 @@
     </div>
 
     <div class="card">
-      <h2>☁️ Sincronizar con socio</h2>
-      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Crea un código compartido para que tú y tu socio vean los mismos datos desde sus celulares. Los cambios se suben/bajan al tocar "Sincronizar".</p>
-      <div class="form-row"><label>Código de sincronización</label><input id="syncCodeInput" placeholder="Aún sin código" readonly></div>
-      <div style="display:grid;gap:8px">
-        <button class="btn-primary" onclick="createSyncCode()">🆕 Crear nuevo código</button>
-        <button class="btn-secondary" onclick="enterSyncCode()">🔗 Usar código existente (socio)</button>
-        <button class="btn-secondary" onclick="syncNow()">🔄 Sincronizar ahora</button>
-      </div>
-      <p id="syncStatus" style="color:var(--muted);font-size:12px;margin:12px 0 0;text-align:center"></p>
+      <h2>☁️ Sincronización automática</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Conectado a Firebase. Cualquier venta o compra que registres tú o Hugo aparecerá automáticamente en ambos dispositivos en tiempo real.</p>
+      <div id="syncStatus" style="font-size:13px;text-align:center;padding:12px;background:var(--card-2);border-radius:10px;color:var(--muted)">Conectando a Firebase...</div>
     </div>
 
     <div class="card">
@@ -515,7 +527,10 @@ function loadDB(){
     return db;
   }catch(e){return JSON.parse(JSON.stringify(DEFAULT_DB))}
 }
-function saveDB(){localStorage.setItem(DB_KEY, JSON.stringify(db))}
+function saveDB(){
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  if(window._fsSet) window._fsSet(db).catch(()=>{});
+}
 let db = loadDB();
 let currentUser = null;
 let salesChart = null;
@@ -1218,7 +1233,6 @@ function downloadFile(name, content, type){
 function renderSettings(){
   document.getElementById('bizName').value = db.businessName || '';
   document.getElementById('ivaRateInput').value = db.ivaRate || 19;
-  document.getElementById('syncCodeInput').value = db.syncBinId || '';
 }
 function changePin(){
   const np = document.getElementById('newPin').value;
@@ -1234,70 +1248,50 @@ function saveBiz(){
   saveDB(); toast('Guardado'); renderDashboard();
 }
 
-// ============ SINCRONIZACIÓN EN LA NUBE (jsonblob.com) ============
-// Usa jsonblob.com: almacenamiento JSON gratuito sin registro.
-// El "blob" actúa como una carpeta compartida entre tu celu y el de tu socio.
-const SYNC_API = 'https://jsonblob.com/api/jsonBlob';
+// ============ SINCRONIZACIÓN EN TIEMPO REAL (Firebase) ============
+let _unsubFirestore = null;
 
-async function createSyncCode(){
-  if(db.syncBinId && !confirm('Ya tienes un código. ¿Crear uno nuevo?')) return;
-  document.getElementById('syncStatus').textContent = 'Creando código...';
-  try{
-    const res = await fetch(SYNC_API, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify(db)
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const loc = res.headers.get('Location') || '';
-    const binId = loc.split('/').pop();
-    if(!binId) throw new Error('Sin ID en respuesta');
-    db.syncBinId = binId;
-    saveDB();
-    document.getElementById('syncCodeInput').value = binId;
-    document.getElementById('syncStatus').innerHTML = '✓ Código creado. Compártelo con tu socio por WhatsApp:<br><b style="color:#f59e0b;user-select:all;word-break:break-all">'+binId+'</b>';
-    toast('Código creado ✓');
-  }catch(e){
-    document.getElementById('syncStatus').textContent = 'Error al crear código. Revisa conexión a internet.';
-    toast('Error de sincronización', true);
-  }
+function setSyncStatus(msg, ok){
+  const el = document.getElementById('syncStatus');
+  if(el){ el.textContent = msg; el.style.color = ok===true ? 'var(--good)' : ok===false ? 'var(--bad)' : 'var(--muted)'; }
 }
 
-function enterSyncCode(){
-  const code = prompt('Ingresa el código de sincronización que te compartió tu socio:');
-  if(!code) return;
-  if(!confirm('Esto bajará los datos del código y los combinará con los tuyos. ¿Continuar?')) return;
-  db.syncBinId = code.trim();
-  saveDB();
-  document.getElementById('syncCodeInput').value = db.syncBinId;
-  syncNow();
+function refreshCurrentPage(){
+  const active = document.querySelector('.page.active');
+  if(!active) return;
+  const id = active.id.replace('page-','');
+  if(id==='dashboard') renderDashboard();
+  else if(id==='sales') renderSales();
+  else if(id==='expenses') renderExpensesPage();
+  else if(id==='reports') renderReport();
+  else if(id==='settings') renderSettings();
 }
 
-async function syncNow(){
-  if(!db.syncBinId){ toast('Primero crea o ingresa un código', true); return; }
-  document.getElementById('syncStatus').textContent = 'Sincronizando...';
-  try{
-    // 1. Bajar lo remoto
-    const res = await fetch(SYNC_API+'/'+db.syncBinId, {headers:{'Accept':'application/json'}});
-    if(!res.ok) throw new Error('No se pudo descargar (código inválido?)');
-    const remote = await res.json();
-    // 2. Mergear local + remoto por ID
-    db = mergeDB(db, remote);
-    saveDB();
-    // 3. Subir el resultado merged
-    const up = await fetch(SYNC_API+'/'+db.syncBinId, {
-      method:'PUT',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify(db)
-    });
-    if(!up.ok) throw new Error('No se pudo subir');
-    document.getElementById('syncStatus').textContent = '✓ Sincronizado a las ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
-    renderDashboard();
-    toast('Sincronizado ✓');
-  }catch(e){
-    document.getElementById('syncStatus').textContent = 'Error: ' + e.message;
-    toast('Error al sincronizar', true);
-  }
+function startFirestoreSync(){
+  if(!window._fsListen){ setSyncStatus('Firebase no disponible', false); return; }
+  setSyncStatus('Conectando...', null);
+  if(_unsubFirestore) _unsubFirestore();
+  _unsubFirestore = window._fsListen(snap => {
+    if(!snap.exists()){
+      // Primera vez: subir datos locales a Firebase
+      if(window._fsSet) window._fsSet(db).catch(()=>{});
+      setSyncStatus('✓ Conectado — datos subidos a la nube', true);
+      return;
+    }
+    const remote = snap.data();
+    const merged = mergeDB(db, remote);
+    const changed = ['sales','purchases','expenses','salaries'].some(
+      k => JSON.stringify(merged[k]) !== JSON.stringify(db[k])
+    );
+    if(changed){
+      db = merged;
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      refreshCurrentPage();
+      toast('Datos actualizados desde la nube ☁️');
+    }
+    const hora = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    setSyncStatus('✓ Sincronizado — última actualización ' + hora, true);
+  });
 }
 
 function mergeDB(local, remote){
@@ -1324,12 +1318,6 @@ function mergeDB(local, remote){
   return out;
 }
 
-// Auto-sync al iniciar si hay código
-async function autoSync(){
-  if(db.syncBinId){
-    try{ await syncNow(); }catch(e){}
-  }
-}
 function wipeAll(){
   if(!confirm('Esto borrará TODOS los datos. ¿Estás seguro?')) return;
   if(!confirm('Última oportunidad. ¿Confirmas?')) return;
@@ -1347,7 +1335,8 @@ document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>
 // ============ INIT ============
 function initApp(){
   renderDashboard();
-  if(db.syncBinId) setTimeout(()=>syncNow(), 500);
+  if(window._fsListen) startFirestoreSync();
+  else window.addEventListener('firebase-ready', ()=>startFirestoreSync(), {once:true});
   setTimeout(()=>checkAndNotify(), 1200);
 }
 
