@@ -46,10 +46,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML: network-first — intenta la red, usa caché solo si falla
+  // HTML: network-first con cache: 'no-cache' para saltarse el caché HTTP de GitHub Pages
   if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
-      fetch(req)
+      fetch(new Request(req, { cache: 'no-cache' }))
         .then((res) => {
           if (res && res.status === 200) {
             const copy = res.clone();
