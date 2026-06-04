@@ -194,7 +194,7 @@
       <div class="kpi full">
         <div class="kpi-label">Ganancia neta</div>
         <div class="kpi-value" id="kpiGain">$0</div>
-        <div class="kpi-sub" id="kpiGainSub">Ventas − Compras − Gastos − Sueldos</div>
+        <div class="kpi-sub" id="kpiGainSub">Ventas netas − Compras netas − Gastos − Sueldos</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Ventas</div>
@@ -684,7 +684,11 @@ function renderDashboard(){
   const tPurchases = purchases.reduce((a,b)=>a+b.amount,0);
   const tExpenses = expenses.reduce((a,b)=>a+b.amount,0);
   const tSalaries = salaries.reduce((a,b)=>a+b.amount,0);
-  const gain = tSales - tPurchases - tExpenses - tSalaries;
+
+  // Fórmula: Ventas Netas − Compras Netas − Gastos Brutos − Sueldos
+  const netSales = sales.reduce((a,s)=>a+netFromGross(s.amount),0);
+  const netPurchases = purchases.reduce((a,p)=>a+(p.hasIva!==false ? netFromGross(p.amount) : p.amount),0);
+  const gain = netSales - netPurchases - tExpenses - tSalaries;
 
   document.getElementById('kpiSales').textContent = fmtCLP(tSales);
   document.getElementById('kpiSalesCount').textContent = sales.length+' ventas';
@@ -1199,8 +1203,12 @@ function renderReport(){
   const tP = purchases.reduce((a,b)=>a+b.amount,0);
   const tE = expenses.reduce((a,b)=>a+b.amount,0);
   const tSa = salaries.reduce((a,b)=>a+b.amount,0);
-  const gain = tS - tP - tE - tSa;
-  const margin = tS>0 ? (gain/tS*100).toFixed(1) : 0;
+
+  // Fórmula: Ventas Netas − Compras Netas − Gastos Brutos − Sueldos
+  const netS = sales.reduce((a,s)=>a+netFromGross(s.amount),0);
+  const netP = purchases.reduce((a,p)=>a+(p.hasIva!==false ? netFromGross(p.amount) : p.amount),0);
+  const gain = netS - netP - tE - tSa;
+  const margin = netS>0 ? (gain/netS*100).toFixed(1) : 0;
 
   // IVA mes
   const ivaDeb = sales.reduce((a,s)=>a+ivaFromGross(s.amount),0);
