@@ -1208,8 +1208,10 @@ function renderReport(){
         <div class="kpi-value ${gain>=0?'good':'bad'}">${fmtCLP(gain)}</div>
         <div class="kpi-sub">Margen: ${margin}% · ${sales.length} ventas</div>
       </div>
-      <div class="kpi"><div class="kpi-label">Ventas (bruto)</div><div class="kpi-value good">${fmtCLP(tS)}</div><div class="kpi-sub">Neto: ${fmtCLP(ventasNetas)}</div></div>
-      <div class="kpi"><div class="kpi-label">Compras</div><div class="kpi-value bad">${fmtCLP(tP)}</div></div>
+      <div class="kpi"><div class="kpi-label">Ventas brutas</div><div class="kpi-value good">${fmtCLP(tS)}</div></div>
+      <div class="kpi"><div class="kpi-label">Ventas netas</div><div class="kpi-value good">${fmtCLP(netS)}</div><div class="kpi-sub">sin IVA</div></div>
+      <div class="kpi"><div class="kpi-label">Compras brutas</div><div class="kpi-value bad">${fmtCLP(tP)}</div></div>
+      <div class="kpi"><div class="kpi-label">Compras netas</div><div class="kpi-value bad">${fmtCLP(netP)}</div><div class="kpi-sub">sin IVA facturado</div></div>
       <div class="kpi"><div class="kpi-label">Gastos fijos</div><div class="kpi-value bad">${fmtCLP(tE)}</div></div>
       <div class="kpi"><div class="kpi-label">Sueldos</div><div class="kpi-value bad">${fmtCLP(tSa)}</div></div>
     </div>
