@@ -222,6 +222,11 @@
         <div class="kpi-value bad" id="kpiSalaries">$0</div>
         <div class="kpi-sub" id="kpiSalariesCount">0 pagos</div>
       </div>
+      <div class="kpi full">
+        <div class="kpi-label">Promedio por venta</div>
+        <div class="kpi-value warn" id="kpiAvg">$0</div>
+        <div class="kpi-sub" id="kpiAvgSub">ticket promedio del período</div>
+      </div>
     </div>
 
     <div class="card">
@@ -648,6 +653,10 @@ function renderDashboard(){
   const gEl = document.getElementById('kpiGain');
   gEl.textContent = fmtCLP(gain);
   gEl.className = 'kpi-value ' + (gain >= 0 ? 'good' : 'bad');
+
+  const avg = sales.length > 0 ? tSales / sales.length : 0;
+  document.getElementById('kpiAvg').textContent = fmtCLP(avg);
+  document.getElementById('kpiAvgSub').textContent = sales.length > 0 ? `sobre ${sales.length} ventas` : 'sin ventas en el período';
 
   // IVA
   const ivaDebito = sales.reduce((a,s)=>a+ivaFromGross(s.amount),0);
