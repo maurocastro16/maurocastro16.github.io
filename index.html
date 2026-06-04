@@ -178,22 +178,16 @@
     <div class="header-title"><span id="pageTitle">Resumen</span></div>
     <div class="header-user"><span id="currentUser">—</span><button onclick="logout()" title="Salir">⏻</button></div>
   </div>
+  <div style="margin-top:8px">
+    <select id="dashPeriod" onchange="onPeriodChange()" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#e9d5ff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none;appearance:auto">
+      <option value="month" selected>Este mes</option>
+    </select>
+  </div>
 </header>
 
 <main>
   <!-- DASHBOARD -->
   <section class="page active" id="page-dashboard">
-    <div class="date-filter">
-      <select id="dashPeriod" onchange="renderDashboard()">
-        <option value="today">Hoy</option>
-        <option value="week">Esta semana</option>
-        <option value="month" selected>Este mes</option>
-        <option value="prev_month">Mes anterior</option>
-        <option value="year">Este año</option>
-        <option value="all">Todo</option>
-      </select>
-    </div>
-
     <div id="remindersBanner"></div>
 
     <div class="kpi-grid">
@@ -281,8 +275,8 @@
     </div>
 
     <div class="card">
-      <h2>Ventas de hoy <span class="small" id="todaySalesTotal">$0</span></h2>
-      <ul class="list" id="todaySalesList"><li class="empty">Aún no hay ventas hoy</li></ul>
+      <h2>Ventas del período <span class="small" id="todaySalesTotal">$0</span></h2>
+      <ul class="list" id="todaySalesList"><li class="empty">Aún no hay ventas en este período</li></ul>
     </div>
 
     <div class="card">
@@ -320,7 +314,7 @@
         <button class="btn-primary" onclick="addPurchase()">Guardar compra</button>
       </div>
       <div class="card">
-        <h2>Compras del mes <span class="small" id="purchaseMonthTotal">$0</span></h2>
+        <h2>Compras — <span id="purchasePeriodLabel">Este mes</span> <span class="small" id="purchaseMonthTotal">$0</span></h2>
         <ul class="list" id="purchasesList"></ul>
       </div>
     </div>
@@ -347,7 +341,7 @@
         <button class="btn-primary" onclick="addExpense()">Guardar gasto</button>
       </div>
       <div class="card">
-        <h2>Gastos del mes <span class="small" id="expenseMonthTotal">$0</span></h2>
+        <h2>Gastos — <span id="expensePeriodLabel">Este mes</span> <span class="small" id="expenseMonthTotal">$0</span></h2>
         <ul class="list" id="expensesList"></ul>
       </div>
     </div>
@@ -364,7 +358,7 @@
         <button class="btn-primary" onclick="addSalary()">Guardar sueldo</button>
       </div>
       <div class="card">
-        <h2>Sueldos del mes <span class="small" id="salaryMonthTotal">$0</span></h2>
+        <h2>Sueldos — <span id="salaryPeriodLabel">Este mes</span> <span class="small" id="salaryMonthTotal">$0</span></h2>
         <ul class="list" id="salariesList"></ul>
       </div>
     </div>
@@ -578,7 +572,34 @@ function inRange(dateStr, period){
   }
   if(period==='year') return d.getFullYear()===now.getFullYear();
   if(period==='all') return true;
+  // mes específico YYYY-MM
+  if(/^\d{4}-\d{2}$/.test(period)) return dateStr.startsWith(period);
   return true;
+}
+
+const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function populatePeriodSelect(){
+  const sel = document.getElementById('dashPeriod');
+  const prev = sel.value;
+  const monthSet = new Set();
+  monthSet.add(monthISO());
+  [...db.sales,...db.purchases,...db.expenses,...db.salaries].forEach(x=>{ if(x.date) monthSet.add(x.date.slice(0,7)); });
+  const months = Array.from(monthSet).sort((a,b)=>b.localeCompare(a));
+  let html = `<option value="today">Hoy</option>
+    <option value="week">Esta semana</option>
+    <option value="year">Este año</option>
+    <option value="all">Todo</option>
+    <option disabled>──────────</option>`;
+  html += months.map(m=>{
+    const [y,mo] = m.split('-');
+    const label = MONTH_NAMES[parseInt(mo)-1]+' '+y;
+    const isCur = m===monthISO();
+    return `<option value="${m}"${isCur?' selected':''}>${isCur?'📅 ':''} ${label}</option>`;
+  }).join('');
+  sel.innerHTML = html;
+  // restaurar selección previa si sigue siendo válida
+  if(prev && prev!=='month' && sel.querySelector(`option[value="${prev}"]`)) sel.value = prev;
 }
 function toast(msg, bad){
   const t = document.getElementById('toast');
@@ -613,6 +634,28 @@ function logout(){
   document.getElementById('loginScreen').style.display = 'flex';
 }
 
+// ============ PERÍODO GLOBAL ============
+function getPeriod(){ return document.getElementById('dashPeriod').value || monthISO(); }
+function getPeriodLabel(){
+  const p = getPeriod();
+  if(p==='today') return 'Hoy';
+  if(p==='week') return 'Esta semana';
+  if(p==='month') return 'Este mes';
+  if(p==='year') return 'Este año';
+  if(p==='all') return 'Todo el historial';
+  if(/^\d{4}-\d{2}$/.test(p)){ const [y,mo]=p.split('-'); return MONTH_NAMES[parseInt(mo)-1]+' '+y; }
+  return p;
+}
+function onPeriodChange(){
+  const active = document.querySelector('.page.active');
+  if(!active) return;
+  const id = active.id.replace('page-','');
+  if(id==='dashboard') renderDashboard();
+  else if(id==='sales') renderSales();
+  else if(id==='expenses') renderExpensesPage();
+  else if(id==='reports') renderReport();
+}
+
 // ============ NAVEGACIÓN ============
 function goPage(p){
   document.querySelectorAll('.page').forEach(s=>s.classList.remove('active'));
@@ -630,7 +673,8 @@ function goPage(p){
 
 // ============ DASHBOARD ============
 function renderDashboard(){
-  const period = document.getElementById('dashPeriod').value;
+  populatePeriodSelect();
+  const period = getPeriod();
   const sales = db.sales.filter(s=>inRange(s.date, period));
   const purchases = db.purchases.filter(p=>inRange(p.date, period));
   const expenses = db.expenses.filter(e=>inRange(e.date, period));
@@ -712,7 +756,6 @@ function renderDashboard(){
 }
 
 function drawSalesChart(period){
-  // build last N days of sales
   let days = 14;
   if(period==='today') days = 1;
   else if(period==='week') days = 7;
@@ -722,6 +765,11 @@ function drawSalesChart(period){
   const now = new Date();
   let endRef = now;
   if(period==='prev_month') endRef = new Date(now.getFullYear(), now.getMonth(), 0);
+  if(/^\d{4}-\d{2}$/.test(period)){
+    const [y,mo] = period.split('-').map(Number);
+    days = new Date(y, mo, 0).getDate();
+    endRef = new Date(y, mo-1, days);
+  }
   for(let i=days-1;i>=0;i--){
     const d = new Date(endRef); d.setDate(endRef.getDate()-i);
     const iso = d.toISOString().slice(0,10);
@@ -809,19 +857,17 @@ function deleteSale(id){
   saveDB(); renderSales();
 }
 function renderSales(){
-  // defaults
   if(!document.getElementById('sDateInput').value) document.getElementById('sDateInput').value = todayISO();
   refreshChannelDropdown();
-  // hoy
-  const today = todayISO();
-  const todaySales = db.sales.filter(s=>s.date===today).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-  const total = todaySales.reduce((a,b)=>a+b.amount,0);
+  const period = getPeriod();
+  const periodSales = db.sales.filter(s=>inRange(s.date, period)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const total = periodSales.reduce((a,b)=>a+b.amount,0);
   document.getElementById('todaySalesTotal').textContent = fmtCLP(total);
   const list = document.getElementById('todaySalesList');
-  if(todaySales.length===0) list.innerHTML = '<li class="empty">Aún no hay ventas hoy</li>';
-  else list.innerHTML = todaySales.map(s=>`
+  if(periodSales.length===0) list.innerHTML = '<li class="empty">Aún no hay ventas en este período</li>';
+  else list.innerHTML = periodSales.map(s=>`
     <li>
-      <div class="l-main"><div class="l-title">${s.channel||s.productName||'Venta'}</div><div class="l-sub">${s.notes||''}${s.notes&&s.user?' · ':''}${s.user||''}</div></div>
+      <div class="l-main"><div class="l-title">${s.channel||s.productName||'Venta'}</div><div class="l-sub">${formatDate(s.date)}${s.notes?' · '+s.notes:''}${s.user?' · '+s.user:''}</div></div>
       <div class="l-amount in">${fmtCLP(s.amount)}</div>
       <button class="l-del" onclick="deleteSale('${s.id}')">✕</button>
     </li>`).join('');
@@ -875,13 +921,13 @@ function addPurchase(){
 }
 function deletePurchase(id){ if(!confirm('¿Eliminar?')) return; db.purchases = db.purchases.filter(x=>x.id!==id); saveDB(); renderPurchases(); }
 function renderPurchases(){
-  const month = monthISO();
-  const list = db.purchases.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
-  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
-  document.getElementById('purchaseMonthTotal').textContent = fmtCLP(monthTotal);
+  const period = getPeriod();
+  const list = db.purchases.filter(p=>inRange(p.date, period)).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  document.getElementById('purchaseMonthTotal').textContent = fmtCLP(list.reduce((a,b)=>a+b.amount,0));
+  document.getElementById('purchasePeriodLabel').textContent = getPeriodLabel();
   const el = document.getElementById('purchasesList');
-  if(list.length===0){ el.innerHTML = '<li class="empty">Sin compras registradas</li>'; return; }
-  el.innerHTML = list.slice(0,30).map(p=>`
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin compras en este período</li>'; return; }
+  el.innerHTML = list.map(p=>`
     <li>
       <div class="l-main"><div class="l-title">${p.desc}</div><div class="l-sub">${formatDate(p.date)}${p.supplier?' · '+p.supplier:''}</div></div>
       <div class="l-amount out">−${fmtCLP(p.amount)}</div>
@@ -903,13 +949,13 @@ function addExpense(){
 }
 function deleteExpense(id){ if(!confirm('¿Eliminar?')) return; db.expenses = db.expenses.filter(x=>x.id!==id); saveDB(); renderExpenses(); }
 function renderExpenses(){
-  const month = monthISO();
-  const list = db.expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
-  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
-  document.getElementById('expenseMonthTotal').textContent = fmtCLP(monthTotal);
+  const period = getPeriod();
+  const list = db.expenses.filter(e=>inRange(e.date, period)).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  document.getElementById('expenseMonthTotal').textContent = fmtCLP(list.reduce((a,b)=>a+b.amount,0));
+  document.getElementById('expensePeriodLabel').textContent = getPeriodLabel();
   const el = document.getElementById('expensesList');
-  if(list.length===0){ el.innerHTML = '<li class="empty">Sin gastos registrados</li>'; return; }
-  el.innerHTML = list.slice(0,30).map(p=>`
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin gastos en este período</li>'; return; }
+  el.innerHTML = list.map(p=>`
     <li>
       <div class="l-main"><div class="l-title">${p.category}${p.desc?' — '+p.desc:''}</div><div class="l-sub">${formatDate(p.date)}</div></div>
       <div class="l-amount out">−${fmtCLP(p.amount)}</div>
@@ -930,13 +976,13 @@ function addSalary(){
 }
 function deleteSalary(id){ if(!confirm('¿Eliminar?')) return; db.salaries = db.salaries.filter(x=>x.id!==id); saveDB(); renderSalaries(); }
 function renderSalaries(){
-  const month = monthISO();
-  const list = db.salaries.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
-  const monthTotal = list.filter(p=>p.date.startsWith(month)).reduce((a,b)=>a+b.amount,0);
-  document.getElementById('salaryMonthTotal').textContent = fmtCLP(monthTotal);
+  const period = getPeriod();
+  const list = db.salaries.filter(s=>inRange(s.date, period)).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  document.getElementById('salaryMonthTotal').textContent = fmtCLP(list.reduce((a,b)=>a+b.amount,0));
+  document.getElementById('salaryPeriodLabel').textContent = getPeriodLabel();
   const el = document.getElementById('salariesList');
-  if(list.length===0){ el.innerHTML = '<li class="empty">Sin sueldos registrados</li>'; return; }
-  el.innerHTML = list.slice(0,30).map(p=>`
+  if(list.length===0){ el.innerHTML = '<li class="empty">Sin sueldos en este período</li>'; return; }
+  el.innerHTML = list.map(p=>`
     <li>
       <div class="l-main"><div class="l-title">${p.person}</div><div class="l-sub">${formatDate(p.date)} · ${p.month||''}</div></div>
       <div class="l-amount out">−${fmtCLP(p.amount)}</div>
@@ -1295,6 +1341,7 @@ function startFirestoreSync(){
     if(changed){
       db = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
+      populatePeriodSelect();
       refreshCurrentPage();
       toast('Datos actualizados desde la nube ☁️');
     }
@@ -1343,6 +1390,7 @@ document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>
 
 // ============ INIT ============
 function initApp(){
+  populatePeriodSelect();
   renderDashboard();
   if(window._fsListen) startFirestoreSync();
   else window.addEventListener('firebase-ready', ()=>startFirestoreSync(), {once:true});
