@@ -191,23 +191,23 @@
     <div id="remindersBanner"></div>
 
     <div class="kpi-grid">
-      <div class="kpi full">
+      <div class="kpi full" style="background:linear-gradient(135deg,#2d1048,#1c1028);border-color:#8b3fd1;padding:20px">
         <div class="kpi-label">Ganancia neta</div>
-        <div class="kpi-value" id="kpiGain">$0</div>
+        <div class="kpi-value" id="kpiGain" style="font-size:36px">$0</div>
         <div class="kpi-sub" id="kpiGainSub">Ventas netas − Compras netas − Gastos − Sueldos</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Ventas</div>
+        <div class="kpi-label">Ventas brutas</div>
         <div class="kpi-value good" id="kpiSales">$0</div>
         <div class="kpi-sub" id="kpiSalesCount">0 ventas</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Compras</div>
+        <div class="kpi-label">Compras brutas</div>
         <div class="kpi-value bad" id="kpiPurchases">$0</div>
         <div class="kpi-sub" id="kpiPurchasesCount">0 movimientos</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Gastos</div>
+        <div class="kpi-label">Gastos fijos</div>
         <div class="kpi-value bad" id="kpiExpenses">$0</div>
         <div class="kpi-sub" id="kpiExpensesCount">0 movimientos</div>
       </div>
@@ -224,27 +224,6 @@
     </div>
 
     <div class="card">
-      <h2>💰 IVA del período <span class="small" id="ivaPeriodLabel"></span></h2>
-      <div class="kpi-grid" style="margin-bottom:0">
-        <div class="kpi">
-          <div class="kpi-label">IVA Débito (ventas)</div>
-          <div class="kpi-value good" id="kpiIvaSales">$0</div>
-          <div class="kpi-sub">IVA que cobraste</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">IVA Crédito (compras)</div>
-          <div class="kpi-value" id="kpiIvaPurchases" style="color:#a39bb5">$0</div>
-          <div class="kpi-sub">IVA que pagaste</div>
-        </div>
-        <div class="kpi full">
-          <div class="kpi-label">IVA a pagar al SII</div>
-          <div class="kpi-value warn" id="kpiIvaDue">$0</div>
-          <div class="kpi-sub" id="kpiIvaDueSub">Débito − Crédito</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
       <h2>Ventas por día <span class="small" id="chartLabel"></span></h2>
       <div class="chart-wrap"><canvas id="chartSales"></canvas></div>
     </div>
@@ -252,11 +231,6 @@
     <div class="card">
       <h2>Ventas por canal</h2>
       <ul class="list" id="topChannelsList"><li class="empty">Sin datos aún</li></ul>
-    </div>
-
-    <div class="card">
-      <h2>Movimientos recientes</h2>
-      <ul class="list" id="recentList"><li class="empty">Aún no hay movimientos</li></ul>
     </div>
   </section>
 
