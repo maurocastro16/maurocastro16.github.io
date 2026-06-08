@@ -224,6 +224,25 @@
     </div>
 
     <div class="card">
+      <h2>IVA estimado <span class="small" id="ivaPeriodLabel"></span></h2>
+      <div class="kpi-grid" style="margin-bottom:0">
+        <div class="kpi">
+          <div class="kpi-label">IVA Débito (ventas)</div>
+          <div class="kpi-value warn" id="kpiIvaSales">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">IVA Crédito (compras)</div>
+          <div class="kpi-value" style="color:var(--muted)" id="kpiIvaPurchases">$0</div>
+        </div>
+        <div class="kpi full">
+          <div class="kpi-label">IVA neto a pagar / favor</div>
+          <div class="kpi-value" id="kpiIvaDue">$0</div>
+          <div class="kpi-sub" id="kpiIvaDueSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Ventas por día <span class="small" id="chartLabel"></span></h2>
       <div class="chart-wrap"><canvas id="chartSales"></canvas></div>
     </div>
@@ -231,6 +250,11 @@
     <div class="card">
       <h2>Ventas por canal</h2>
       <ul class="list" id="topChannelsList"><li class="empty">Sin datos aún</li></ul>
+    </div>
+
+    <div class="card">
+      <h2>Últimos movimientos</h2>
+      <ul class="list" id="recentList"><li class="empty">Aún no hay movimientos</li></ul>
     </div>
   </section>
 
